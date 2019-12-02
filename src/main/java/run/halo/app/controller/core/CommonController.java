@@ -65,6 +65,7 @@ public class CommonController extends AbstractErrorController {
      * @return String
      */
     @GetMapping
+//    @GetMapping("/error")
     public String handleError(HttpServletRequest request, HttpServletResponse response, Model model) {
         HttpStatus status = getStatus(request);
 

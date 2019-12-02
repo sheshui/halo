@@ -3,6 +3,7 @@ package run.halo.app.controller.content;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.ResponseBody;
 import run.halo.app.exception.ServiceException;
 import run.halo.app.model.entity.User;
@@ -32,9 +33,9 @@ public class MainController {
         this.optionService = optionService;
     }
 
-    @GetMapping("/admin")
-    public String admin() {
-        return "redirect:/admin/index.html";
+    @GetMapping("{userId}/admin")
+    public String admin(@PathVariable("userId") int userId) {
+        return "redirect:"+userId+"/admin/index.html";
     }
 
     @GetMapping("/install")
