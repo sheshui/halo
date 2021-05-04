@@ -1,5 +1,9 @@
 package run.halo.app.service;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -12,11 +16,6 @@ import run.halo.app.model.entity.PostTag;
 import run.halo.app.model.entity.Tag;
 import run.halo.app.model.enums.PostStatus;
 import run.halo.app.service.base.CrudService;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Post tag service interface.
@@ -66,7 +65,7 @@ public interface PostTagService extends CrudService<PostTag, Integer> {
     /**
      * Lists posts by tag id and post status.
      *
-     * @param tagId  tag id must not be null
+     * @param tagId tag id must not be null
      * @param status post status
      * @return a list of post
      */
@@ -74,9 +73,19 @@ public interface PostTagService extends CrudService<PostTag, Integer> {
     List<Post> listPostsBy(@NonNull Integer tagId, @NonNull PostStatus status);
 
     /**
+     * Lists posts by tag slug and post status.
+     *
+     * @param slug tag slug must not be null
+     * @param status post status
+     * @return a list of post
+     */
+    @NonNull
+    List<Post> listPostsBy(@NonNull String slug, @NonNull PostStatus status);
+
+    /**
      * Pages posts by tag id.
      *
-     * @param tagId    must not be null
+     * @param tagId must not be null
      * @param pageable must not be null
      * @return a page of post
      */
@@ -85,8 +94,8 @@ public interface PostTagService extends CrudService<PostTag, Integer> {
     /**
      * Pages posts by tag id and post status.
      *
-     * @param tagId    must not be null
-     * @param status   post status
+     * @param tagId must not be null
+     * @param status post status
      * @param pageable must not be null
      * @return a page of post
      */

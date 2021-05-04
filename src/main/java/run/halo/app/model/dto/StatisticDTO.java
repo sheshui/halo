@@ -6,24 +6,29 @@ import lombok.Data;
  * Statistic DTO.
  *
  * @author johnniang
- * @date 3/19/19
+ * @author ryanwang
+ * @date 2019-03-19
  */
 @Data
 public class StatisticDTO {
 
-    private long postCount;
+    private Long postCount;
 
-    private long commentCount;
+    private Long commentCount;
 
-    private long attachmentCount;
+    private Long categoryCount;
 
-    private long birthday;
+    private Long tagCount;
 
-    private long establishDays;
+    private Long journalCount;
 
-    private long linkCount;
+    private Long birthday;
 
-    private long visitCount;
+    private Long establishDays;
 
-    private long likeCount;
+    private Long linkCount;
+
+    private Long visitCount;
+
+    private Long likeCount;
 }

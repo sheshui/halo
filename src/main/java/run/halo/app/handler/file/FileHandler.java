@@ -1,6 +1,13 @@
 package run.halo.app.handler.file;
 
+import static run.halo.app.model.support.HaloConst.FILE_SEPARATOR;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.function.Supplier;
+import javax.imageio.ImageReader;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
@@ -9,38 +16,17 @@ import org.springframework.web.multipart.MultipartFile;
 import run.halo.app.exception.FileOperationException;
 import run.halo.app.model.enums.AttachmentType;
 import run.halo.app.model.support.UploadResult;
-
-import static run.halo.app.model.support.HaloConst.FILE_SEPARATOR;
+import run.halo.app.utils.ImageUtils;
 
 /**
  * File handler interface.
  *
  * @author johnniang
- * @date 3/27/19
+ * @date 2019-03-27
  */
 public interface FileHandler {
 
     MediaType IMAGE_TYPE = MediaType.valueOf("image/*");
-
-    /**
-     * Check whether media type provided is an image type.
-     *
-     * @param mediaType media type provided
-     * @return true if it is an image type
-     */
-    static boolean isImageType(@Nullable String mediaType) {
-        return mediaType != null && IMAGE_TYPE.includes(MediaType.valueOf(mediaType));
-    }
-
-    /**
-     * Check whether media type provided is an image type.
-     *
-     * @param mediaType media type provided
-     * @return true if it is an image type
-     */
-    static boolean isImageType(@Nullable MediaType mediaType) {
-        return mediaType != null && IMAGE_TYPE.includes(mediaType);
-    }
 
     /**
      * Normalize directory full name, ensure the end path separator.
@@ -66,6 +52,44 @@ public interface FileHandler {
     UploadResult upload(@NonNull MultipartFile file);
 
     /**
+     * Check if the current file is an image.
+     *
+     * @param file multipart file must not be null
+     * @return true if the current file is an image, false otherwise
+     */
+    default boolean isImageType(@NonNull MultipartFile file) {
+        String mediaType = file.getContentType();
+        return mediaType != null && IMAGE_TYPE.includes(MediaType.valueOf(mediaType));
+    }
+
+    /**
+     * @param uploadResult updated result must not be null
+     * @param file multipart file must not be null
+     * @param thumbnailSupplier thumbnail supplier
+     */
+    default void handleImageMetadata(@NonNull MultipartFile file,
+        @NonNull UploadResult uploadResult,
+        @Nullable Supplier<String> thumbnailSupplier) {
+        if (isImageType(file)) {
+            // Handle image
+            try (InputStream is = file.getInputStream()) {
+                ImageReader image = ImageUtils.getImageReaderFromFile(is, uploadResult.getSuffix());
+                uploadResult.setWidth(image.getWidth(0));
+                uploadResult.setHeight(image.getHeight(0));
+                if (thumbnailSupplier != null) {
+                    uploadResult.setThumbPath(thumbnailSupplier.get());
+                }
+            } catch (IOException | OutOfMemoryError e) {
+                // ignore IOException and OOM
+                LoggerFactory.getLogger(getClass()).warn("Failed to fetch image meta data", e);
+            }
+        }
+        if (StringUtils.isBlank(uploadResult.getThumbPath())) {
+            uploadResult.setThumbPath(uploadResult.getFilePath());
+        }
+    }
+
+    /**
      * Deletes file.
      *
      * @param key file key must not be null
@@ -74,10 +98,10 @@ public interface FileHandler {
     void delete(@NonNull String key);
 
     /**
-     * Checks if the given type is supported.
+     * Get attachment type is supported.
      *
-     * @param type attachment type
-     * @return true if supported; false or else
+     * @return attachment type
      */
-    boolean supportType(@Nullable AttachmentType type);
+    AttachmentType getAttachmentType();
+
 }

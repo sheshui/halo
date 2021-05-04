@@ -1,26 +1,36 @@
 package run.halo.app.controller.admin.api;
 
+import static org.springframework.data.domain.Sort.Direction.ASC;
+import static org.springframework.data.domain.Sort.Direction.DESC;
+
 import io.swagger.annotations.ApiOperation;
+import java.util.List;
+import java.util.stream.Collectors;
+import javax.validation.Valid;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.SortDefault;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import run.halo.app.model.dto.MenuDTO;
+import run.halo.app.model.dto.base.InputConverter;
 import run.halo.app.model.entity.Menu;
 import run.halo.app.model.params.MenuParam;
 import run.halo.app.model.vo.MenuVO;
 import run.halo.app.service.MenuService;
 
-import javax.validation.Valid;
-import java.util.List;
-
-import static org.springframework.data.domain.Sort.Direction.ASC;
-import static org.springframework.data.domain.Sort.Direction.DESC;
-
 /**
  * Menu controller.
  *
  * @author johnniang
- * @date 4/3/19
+ * @author ryanwang
+ * @date 2019-04-03
  */
 @RestController
 @RequestMapping("/api/admin/menus")
@@ -34,24 +44,26 @@ public class MenuController {
 
     @GetMapping
     @ApiOperation("Lists all menus")
-    public List<MenuDTO> listAll(@SortDefault(sort = "priority", direction = DESC) Sort sort) {
-        return menuService.listDtos(sort);
+    public List<MenuDTO> listAll(@SortDefault(sort = "team", direction = DESC) Sort sort) {
+        return menuService.listDtos(sort.and(Sort.by(ASC, "priority")));
     }
 
     @GetMapping("tree_view")
-    @ApiOperation("List as category tree")
-    public List<MenuVO> listAsTree(@SortDefault(sort = "priority", direction = ASC) Sort sort) {
-        return menuService.listAsTree(sort);
+    @ApiOperation("Lists menus as tree")
+    public List<MenuVO> listAsTree(@SortDefault(sort = "team", direction = DESC) Sort sort) {
+        return menuService.listAsTree(sort.and(Sort.by(ASC, "priority")));
     }
 
-    /**
-     * Get menu by menuId.
-     *
-     * @param menuId menuId
-     * @return MenuDTO
-     */
+    @GetMapping("team/tree_view")
+    @ApiOperation("Lists menus as tree by team")
+    public List<MenuVO> listDefaultsAsTreeByTeam(
+        @SortDefault(sort = "priority", direction = ASC) Sort sort,
+        @RequestParam(name = "team") String team) {
+        return menuService.listByTeamAsTree(team, sort);
+    }
+
     @GetMapping("{menuId:\\d+}")
-    @ApiOperation("Get menu detail by id")
+    @ApiOperation("Gets menu detail by id")
     public MenuDTO getBy(@PathVariable("menuId") Integer menuId) {
         return new MenuDTO().convertFrom(menuService.getById(menuId));
     }
@@ -62,10 +74,21 @@ public class MenuController {
         return new MenuDTO().convertFrom(menuService.createBy(menuParam));
     }
 
+    @PostMapping("/batch")
+    public List<MenuDTO> createBatchBy(@RequestBody @Valid List<MenuParam> menuParams) {
+        List<Menu> menus = menuParams
+            .stream()
+            .map(InputConverter::convertTo)
+            .collect(Collectors.toList());
+        return menuService.createInBatch(menus).stream()
+            .map(menu -> (MenuDTO) new MenuDTO().convertFrom(menu))
+            .collect(Collectors.toList());
+    }
+
     @PutMapping("{menuId:\\d+}")
     @ApiOperation("Updates a menu")
     public MenuDTO updateBy(@PathVariable("menuId") Integer menuId,
-                            @RequestBody @Valid MenuParam menuParam) {
+        @RequestBody @Valid MenuParam menuParam) {
         // Get the menu
         Menu menu = menuService.getById(menuId);
 
@@ -74,6 +97,17 @@ public class MenuController {
 
         // Update menu in database
         return new MenuDTO().convertFrom(menuService.update(menu));
+    }
+
+    @PutMapping("/batch")
+    public List<MenuDTO> updateBatchBy(@RequestBody @Valid List<MenuParam> menuParams) {
+        List<Menu> menus = menuParams
+            .stream()
+            .map(InputConverter::convertTo)
+            .collect(Collectors.toList());
+        return menuService.updateInBatch(menus).stream()
+            .map(menu -> (MenuDTO) new MenuDTO().convertFrom(menu))
+            .collect(Collectors.toList());
     }
 
     @DeleteMapping("{menuId:\\d+}")
@@ -87,5 +121,20 @@ public class MenuController {
             });
         }
         return new MenuDTO().convertFrom(menuService.removeById(menuId));
+    }
+
+    @DeleteMapping("/batch")
+    public List<MenuDTO> deleteBatchBy(@RequestBody List<Integer> menuIds) {
+        List<Menu> menus = menuService.listAllByIds(menuIds);
+        menuService.removeInBatch(menuIds);
+        return menus.stream()
+            .map(menu -> (MenuDTO) new MenuDTO().convertFrom(menu))
+            .collect(Collectors.toList());
+    }
+
+    @GetMapping("teams")
+    @ApiOperation("Lists all menu teams")
+    public List<String> teams() {
+        return menuService.listAllTeams();
     }
 }

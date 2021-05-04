@@ -1,15 +1,15 @@
 package run.halo.app.cache;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.Assert;
-
-import javax.annotation.PreDestroy;
 import java.util.Optional;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import javax.annotation.PreDestroy;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.NonNull;
+import org.springframework.util.Assert;
 
 /**
  * In-memory cache store.
@@ -17,24 +17,25 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author johnniang
  */
 @Slf4j
-public class InMemoryCacheStore extends StringCacheStore {
+public class InMemoryCacheStore extends AbstractStringCacheStore {
 
     /**
      * Cleaner schedule period. (ms)
      */
-    private final static long PERIOD = 60 * 1000;
+    private static final long PERIOD = 60 * 1000;
 
     /**
      * Cache container.
      */
-    private final static ConcurrentHashMap<String, CacheWrapper<String>> CACHE_CONTAINER = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, CacheWrapper<String>> CACHE_CONTAINER =
+        new ConcurrentHashMap<>();
 
     private final Timer timer;
 
     /**
      * Lock.
      */
-    private Lock lock = new ReentrantLock();
+    private final Lock lock = new ReentrantLock();
 
     public InMemoryCacheStore() {
         // Run a cache store cleaner
@@ -43,37 +44,40 @@ public class InMemoryCacheStore extends StringCacheStore {
     }
 
     @Override
-    Optional<CacheWrapper<String>> getInternal(String key) {
+    @NonNull
+    Optional<CacheWrapper<String>> getInternal(@NonNull String key) {
         Assert.hasText(key, "Cache key must not be blank");
 
         return Optional.ofNullable(CACHE_CONTAINER.get(key));
     }
 
     @Override
-    void putInternal(String key, CacheWrapper<String> cacheWrapper) {
+    void putInternal(@NonNull String key, @NonNull CacheWrapper<String> cacheWrapper) {
         Assert.hasText(key, "Cache key must not be blank");
         Assert.notNull(cacheWrapper, "Cache wrapper must not be null");
 
         // Put the cache wrapper
         CacheWrapper<String> putCacheWrapper = CACHE_CONTAINER.put(key, cacheWrapper);
 
-        log.debug("Put [{}] cache result: [{}], original cache wrapper: [{}]", key, putCacheWrapper, cacheWrapper);
+        log.debug("Put [{}] cache result: [{}], original cache wrapper: [{}]", key, putCacheWrapper,
+            cacheWrapper);
     }
 
     @Override
-    Boolean putInternalIfAbsent(String key, CacheWrapper<String> cacheWrapper) {
+    Boolean putInternalIfAbsent(@NonNull String key, @NonNull CacheWrapper<String> cacheWrapper) {
         Assert.hasText(key, "Cache key must not be blank");
         Assert.notNull(cacheWrapper, "Cache wrapper must not be null");
 
         log.debug("Preparing to put key: [{}], value: [{}]", key, cacheWrapper);
 
+        lock.lock();
         try {
-            lock.lock();
             // Get the value before
             Optional<String> valueOptional = get(key);
 
             if (valueOptional.isPresent()) {
-                log.warn("Failed to put the cache, because the key: [{}] has been present already", key);
+                log.warn("Failed to put the cache, because the key: [{}] has been present already",
+                    key);
                 return false;
             }
 
@@ -87,7 +91,7 @@ public class InMemoryCacheStore extends StringCacheStore {
     }
 
     @Override
-    public void delete(String key) {
+    public void delete(@NonNull String key) {
         Assert.hasText(key, "Cache key must not be blank");
 
         CACHE_CONTAINER.remove(key);
@@ -98,6 +102,11 @@ public class InMemoryCacheStore extends StringCacheStore {
     public void preDestroy() {
         log.debug("Cancelling all timer tasks");
         timer.cancel();
+        clear();
+    }
+
+    private void clear() {
+        CACHE_CONTAINER.clear();
     }
 
     /**

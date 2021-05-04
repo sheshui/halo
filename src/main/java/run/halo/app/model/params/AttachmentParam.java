@@ -1,17 +1,16 @@
 package run.halo.app.model.params;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 import lombok.Data;
 import run.halo.app.model.dto.base.InputConverter;
 import run.halo.app.model.entity.Attachment;
-
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Size;
 
 /**
  * Attachment params.
  *
  * @author ryanwang
- * @date : 2019/04/20
+ * @date 2019/04/20
  */
 @Data
 public class AttachmentParam implements InputConverter<Attachment> {

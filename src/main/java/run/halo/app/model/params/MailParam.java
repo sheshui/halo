@@ -1,15 +1,14 @@
 package run.halo.app.model.params;
 
-import lombok.Data;
-
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
+import lombok.Data;
 
 /**
  * Journal query params.
  *
  * @author ryanwang
- * @date : 2019/05/07
+ * @date 2019/05/07
  */
 @Data
 public class MailParam {

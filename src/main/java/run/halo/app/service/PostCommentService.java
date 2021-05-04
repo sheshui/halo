@@ -1,15 +1,12 @@
 package run.halo.app.service;
 
+import java.util.List;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import run.halo.app.model.entity.PostComment;
-import run.halo.app.model.params.CommentQuery;
 import run.halo.app.model.vo.PostCommentWithPostVO;
 import run.halo.app.service.base.BaseCommentService;
-
-import java.util.List;
 
 /**
  * Post comment service interface.
@@ -47,6 +44,8 @@ public interface PostCommentService extends BaseCommentService<PostComment> {
     @NonNull
     List<PostCommentWithPostVO> convertToWithPostVo(@Nullable List<PostComment> postComments);
 
-    @NonNull
-    Page<PostCommentWithPostVO> pageTreeBy(@NonNull CommentQuery commentQuery, @NonNull Pageable pageable);
+    /**
+     * Validate CommentBlackList Status
+     */
+    void validateCommentBlackListStatus();
 }

@@ -2,7 +2,8 @@ package run.halo.app.service;
 
 import org.springframework.lang.NonNull;
 import run.halo.app.model.dto.EnvironmentDTO;
-import run.halo.app.model.dto.StatisticDTO;
+import run.halo.app.model.dto.LoginPreCheckDTO;
+import run.halo.app.model.entity.User;
 import run.halo.app.model.params.LoginParam;
 import run.halo.app.model.params.ResetPasswordParam;
 import run.halo.app.security.token.AuthToken;
@@ -23,20 +24,25 @@ public interface AdminService {
 
     int REFRESH_TOKEN_EXPIRED_DAYS = 30;
 
-    String ACCESS_TOKEN_CACHE_PREFIX = "halo.admin.access_token.";
-
-    String REFRESH_TOKEN_CACHE_PREFIX = "halo.admin.refresh_token.";
-
-    String LOGS_PATH = "logs/spring.log";
+    String LOG_PATH = "logs/spring.log";
 
     /**
-     * Authenticates.
+     * Authenticates username password.
      *
      * @param loginParam login param must not be null
-     * @return authentication token
+     * @return User
      */
     @NonNull
-    AuthToken authenticate(@NonNull LoginParam loginParam);
+    User authenticate(@NonNull LoginParam loginParam);
+
+    /**
+     * Check authCode and build authToken.
+     *
+     * @param loginParam login param must not be null
+     * @return User
+     */
+    @NonNull
+    AuthToken authCodeCheck(@NonNull LoginParam loginParam);
 
     /**
      * Clears authentication.
@@ -58,14 +64,6 @@ public interface AdminService {
     void resetPasswordByCode(@NonNull ResetPasswordParam param);
 
     /**
-     * Get system counts.
-     *
-     * @return count dto
-     */
-    @NonNull
-    StatisticDTO getCount();
-
-    /**
      * Get system environments
      *
      * @return environments
@@ -83,14 +81,18 @@ public interface AdminService {
     AuthToken refreshToken(@NonNull String refreshToken);
 
     /**
-     * Updates halo admin assets.
+     * Get halo logs content.
+     *
+     * @param lines lines
+     * @return logs content.
      */
-    void updateAdminAssets();
+    String getLogFiles(@NonNull Long lines);
 
     /**
-     * Get spring logs.
+     * Get user login env
      *
-     * @return recently logs.
+     * @param username username must not be null
+     * @return LoginEnvDTO
      */
-    String getSpringLogs();
+    LoginPreCheckDTO getUserEnv(@NonNull String username);
 }
